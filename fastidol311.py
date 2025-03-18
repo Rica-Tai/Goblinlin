@@ -11,6 +11,10 @@ posX, posY = int(WIDTH / 2 - imgWidth / 2), taskbarHeight
 root = tk.Tk()
 root.geometry(f"{imgWidth}x{imgHeight}+{posX}+{posY}")
 root.overrideredirect(1)
+clicked = False
+fall = False
+
+status_num = 0
 
 root.configure(bg='black')
 root.attributes('-transparentcolor', 'black')
@@ -30,7 +34,7 @@ def load_image(file_path):
             for x in range(frame_rgba.size[0]):
                 for y in range(frame_rgba.size[1]):
                     r, g, b, a = pixels[x, y]
-                    if r < 3 and g < 3 and b < 3:  # 如果像素是close黑色
+                    if r < 10 and g < 10 and b < 10:  # 如果像素是close黑色
                         pixels[x, y] = (0, 0, 0, 0)  # 设置为透明
             
             frames.append(frame_rgba)  # 不直接转换为PhotoImage
@@ -110,35 +114,43 @@ else:
     frame_index = 0
 
 def falling():
-    global status_num, posX, posY
+    global status_num, posX, posY, fall
     if root.winfo_y() + imgHeight < HEIGHT - taskbarHeight:
-        if status_num != 1:
-            status_num = 1
-        posY+=1
+        fall = True
+        if status_num != 6:
+            status_num = 6
+        posY += int(((HEIGHT - taskbarHeight) / 1200))
         root.geometry(f"{imgWidth}x{imgHeight}+{posX}+{posY}")
-    elif root.winfo_y() + imgHeight >= HEIGHT - taskbarHeight - 3 and status_num == 1:
-        status_num = 0
+    elif root.winfo_y() + imgHeight >= HEIGHT - taskbarHeight - 3:
+        fall = False
+        print("fall = " + fall)
     root.after(5, falling)
 
 def on_click(event):
     global status_num, clicked
     clicked = True
-    status_num = random.randint(7, 11)
+    status_num = random.randint(6, 12)
+    print(status_num)
 
 
 def changeStatus():
-    global status_num, clicked
-    if not clicked:
+    global status_num, clicked, fall
+    if not clicked and not fall:
         status_num = random.randint(2, 6)
         print(status_num)
         if (status_num == 0 or status_num == 1):
             root.after(6000, changeStatus)
-        elif (status_num == 2 or status_num == 3):
+        elif (status_num == 2 or status_num == 3 or status_num == 10):
             root.after(4000, changeStatus)
         elif (status_num == 4 or status_num == 5):
             root.after(7000, changeStatus)
         elif (status_num == 6):
             root.after(12000, changeStatus)
+        elif (status_num == 7 or status_num == 8 or status_num == 12):
+            root.after(5000, changeStatus)
+        elif (status_num == 9 or status_num == 11):
+            root.after(6000, changeStatus)
+
 
 def moving():
     global status_num, posX
@@ -156,14 +168,19 @@ def moving():
     root.after(3, moving)
 
 def Anim():
-    global frame_index, player, clicked
+    global frame_index, player, clicked, status_num, fall
     frames, durations = status[status_num]
     if frame_index < len(frames) - 1:
         frame_index += 1
     else:
         frame_index = 0
-        if status_num >= 7 and status_num <= 11:  # 如果是点击触发的动画
+        if (status_num >= 6 and status_num <= 12):  # 如果是点击触发的动画
             clicked = False  # 动画完成后重置标志
+            print(clicked)
+            status_num = 3
+        elif (status_num == 1 and fall is not True):
+            clicked = False
+            status_num = 0
     player.config(image=frames[frame_index])
     player.image = frames[frame_index]  # Keep a reference to avoid garbage collection
     root.after(durations[frame_index], Anim)
@@ -174,44 +191,60 @@ def on_drag(event):
     posY = event.y_root - imgHeight // 2
     root.geometry(f"{imgWidth}x{imgHeight}+{posX}+{posY}")
 
-def flat():
-    global status_num
+def flat(event):
+    global status_num, clicked
+    clicked = True
     status_num = 6
 
-def fish():
-    global status_num
+def fish(event):
+    global status_num, clicked
+    clicked = True
     status_num = 7
 
-def child():
-    global status_num
+def child(event):
+    global status_num, clicked
+    clicked = True
     status_num = 8
 
-def mask():
-    global status_num
+def mask(event):
+    global status_num, clicked
+    clicked = True
     status_num = 9
 
-def duck():
-    global status_num
+def duck(event):
+    global status_num, clicked
+    clicked = True
     status_num = 10
 
-def er404():
-    global status_num
+def er404(event):
+    global status_num, clicked
+    clicked = True
     status_num = 11
 
-def house():
-    global status_num
+def house(event):
+    global status_num, clicked
+    clicked = True
     status_num = 12
+
+def wLeft(event):
+    global status_num
+    status_num = 5
+
+def wRight(event):
+    global status_num
+    status_num = 4
 
 root.bind("<Button-1>", on_click)
 root.bind("<B1-Motion>", on_drag)
-
-root.bind('f', lambda event: flat())
-root.bind('w', lambda event: fish())
-root.bind('c', lambda event: child())
-root.bind('m', lambda event: mask())
-root.bind('d', lambda event: duck())
-root.bind('e', lambda event: er404())
-root.bind('h', lambda event: house())
+root.bind("<Left>", wLeft)
+root.bind("<Right>", wRight)
+root.bind('f', flat)
+root.bind('w', fish)
+root.bind('c', child)
+root.bind('m', mask)
+root.bind('d', duck)
+root.bind('e', er404)
+root.bind('h', house)
 
 changeStatus()
 falling()
